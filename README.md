@@ -14,7 +14,7 @@ Data is stored in a local SQLite database named `habits.db`, so records remain a
 
 ## Data Model
 
-Each task has this shape:
+Each habit has this shape:
 
 ```json
 {
@@ -34,12 +34,12 @@ Fields:
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/tasks` | Get all tasks |
-| `POST` | `/tasks` | Create a new task |
-| `GET` | `/tasks/{task_id}` | Get one task by ID |
-| `PUT` | `/tasks/{task_id}` | Replace an existing task |
-| `PATCH` | `/tasks/{task_id}` | Partially update a task |
-| `DELETE` | `/tasks/{task_id}` | Delete a task |
+| `GET` | `/habits` | Get all habits |
+| `POST` | `/habits` | Create a new habit |
+| `GET` | `/habits/{habit_id}` | Get one habit by ID |
+| `PUT` | `/habits/{habit_id}` | Replace an existing habit |
+| `PATCH` | `/habits/{habit_id}` | Partially update a habit |
+| `DELETE` | `/habits/{habit_id}` | Delete a habit |
 
 ## Getting Started
 
@@ -74,7 +74,7 @@ Create a new task:
 
 ```powershell
 Invoke-RestMethod -Method Post `
-  -Uri http://127.0.0.1:8000/tasks `
+  -Uri http://127.0.0.1:8000/habits `
   -ContentType "application/json" `
   -Body '{"title":"Drink water","status":"pending"}'
 ```
@@ -82,13 +82,13 @@ Invoke-RestMethod -Method Post `
 Get all tasks:
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:8000/tasks
+Invoke-RestMethod http://127.0.0.1:8000/habits
 ```
 
 Delete a task:
 
 ```powershell
-Invoke-RestMethod -Method Delete http://127.0.0.1:8000/tasks/3
+Invoke-RestMethod -Method Delete http://127.0.0.1:8000/habits/3
 ```
 
 ## Running Tests
