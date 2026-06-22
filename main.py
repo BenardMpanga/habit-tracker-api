@@ -57,3 +57,4 @@ def delete_task(task_id: int):
             mock_db.pop(index)
             return
     raise HTTPException(status_code=404, detail="Task not found")
+
