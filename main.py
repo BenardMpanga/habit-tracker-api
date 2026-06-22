@@ -1,38 +1,37 @@
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-app = FastAPI(title="Habit Tracker API")
-
 sqlite_file_name = "habits.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 
-class TaskStatus(str, Enum):
+class HabitStatus(str, Enum):
     pending = "pending"
     completed = "completed"
     skipped = "skipped"
 
 
-class TaskBase(SQLModel):
+class HabitBase(SQLModel):
     title: str = Field(min_length=1)
-    status: TaskStatus = TaskStatus.pending
+    status: HabitStatus = HabitStatus.pending
 
 
-class Task(TaskBase, table=True):
+class Habit(HabitBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
 
-class TaskCreate(TaskBase):
+class HabitCreate(HabitBase):
     pass
 
 
-class TaskUpdate(SQLModel):
+class HabitUpdate(SQLModel):
     title: Optional[str] = Field(default=None, min_length=1)
-    status: Optional[TaskStatus] = None
+    status: Optional[HabitStatus] = None
 
 
 def create_db_and_tables():
@@ -44,74 +43,82 @@ def get_session():
         yield session
 
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     create_db_and_tables()
+    yield
 
 
-@app.get("/tasks", response_model=List[Task])
-def get_all_tasks(session: Session = Depends(get_session)):
-    """Returns all tasks in the database."""
-    return session.exec(select(Task)).all()
+app = FastAPI(title="Habit Tracker API", lifespan=lifespan)
 
 
-@app.post("/tasks", response_model=Task, status_code=201)
-def create_task(task: TaskCreate, session: Session = Depends(get_session)):
-    """Creates a new task and adds it to the database."""
-    db_task = Task.model_validate(task)
-    session.add(db_task)
+@app.get("/habits", response_model=List[Habit])
+def get_all_habits(session: Session = Depends(get_session)):
+    """Returns all habits in the database."""
+    return session.exec(select(Habit)).all()
+
+
+@app.post("/habits", response_model=Habit, status_code=201)
+def create_habit(habit: HabitCreate, session: Session = Depends(get_session)):
+    """Creates a new habit and adds it to the database."""
+    db_habit = Habit.model_validate(habit)
+    session.add(db_habit)
     session.commit()
-    session.refresh(db_task)
-    return db_task
+    session.refresh(db_habit)
+    return db_habit
 
 
-@app.get("/tasks/{task_id}", response_model=Task)
-def get_task(task_id: int, session: Session = Depends(get_session)):
-    task = session.get(Task, task_id)
-    if task:
-        return task
-    raise HTTPException(status_code=404, detail="Task not found")
+@app.get("/habits/{habit_id}", response_model=Habit)
+def get_habit(habit_id: int, session: Session = Depends(get_session)):
+    habit = session.get(Habit, habit_id)
+    if habit:
+        return habit
+    raise HTTPException(status_code=404, detail="Habit not found")
 
 
-@app.put("/tasks/{task_id}", response_model=Task)
-def update_task(task_id: int, updated_task: TaskCreate, session: Session = Depends(get_session)):
-    task = session.get(Task, task_id)
-    if task:
-        task.title = updated_task.title
-        task.status = updated_task.status
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-        return task
-    raise HTTPException(status_code=404, detail="Task not found")
-
-
-@app.patch("/tasks/{task_id}", response_model=Task)
-def partially_update_task(
-    task_id: int,
-    task_update: TaskUpdate,
+@app.put("/habits/{habit_id}", response_model=Habit)
+def update_habit(
+    habit_id: int,
+    updated_habit: HabitCreate,
     session: Session = Depends(get_session),
 ):
-    task = session.get(Task, task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    habit = session.get(Habit, habit_id)
+    if habit:
+        habit.title = updated_habit.title
+        habit.status = updated_habit.status
+        session.add(habit)
+        session.commit()
+        session.refresh(habit)
+        return habit
+    raise HTTPException(status_code=404, detail="Habit not found")
 
-    update_data = task_update.model_dump(exclude_unset=True)
+
+@app.patch("/habits/{habit_id}", response_model=Habit)
+def partially_update_habit(
+    habit_id: int,
+    habit_update: HabitUpdate,
+    session: Session = Depends(get_session),
+):
+    habit = session.get(Habit, habit_id)
+    if not habit:
+        raise HTTPException(status_code=404, detail="Habit not found")
+
+    update_data = habit_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(task, key, value)
+        setattr(habit, key, value)
 
-    session.add(task)
+    session.add(habit)
     session.commit()
-    session.refresh(task)
-    return task
+    session.refresh(habit)
+    return habit
 
 
-@app.delete("/tasks/{task_id}", status_code=204)
-def delete_task(task_id: int, session: Session = Depends(get_session)):
-    task = session.get(Task, task_id)
-    if task:
-        session.delete(task)
+@app.delete("/habits/{habit_id}", status_code=204)
+def delete_habit(habit_id: int, session: Session = Depends(get_session)):
+    habit = session.get(Habit, habit_id)
+    if habit:
+        session.delete(habit)
         session.commit()
         return
-    raise HTTPException(status_code=404, detail="Task not found")
+    raise HTTPException(status_code=404, detail="Habit not found")
 
