@@ -31,3 +31,29 @@ def create_task(task: Task):
     
     mock_db.append(task)
     return task
+
+# Get a single task
+@app.get("/tasks/{task_id}", response_model=Task)
+def get_task(task_id: int):
+    for task in mock_db:
+        if task.id == task_id:
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")
+
+# Update a task
+@app.put("/tasks/{task_id}", response_model=Task)
+def update_task(task_id: int, updated_task: Task):
+    for index, task in enumerate(mock_db):
+        if task.id == task_id:
+            mock_db[index] = updated_task
+            return updated_task
+    raise HTTPException(status_code=404, detail="Task not found")
+
+# Delete a task
+@app.delete("/tasks/{task_id}", status_code=204)
+def delete_task(task_id: int):
+    for index, task in enumerate(mock_db):
+        if task.id == task_id:
+            mock_db.pop(index)
+            return
+    raise HTTPException(status_code=404, detail="Task not found")
