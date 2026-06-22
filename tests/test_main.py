@@ -27,8 +27,8 @@ def client_fixture():
     app.dependency_overrides.clear()
 
 
-def test_create_task_generates_id(client):
-    response = client.post("/tasks", json={"title": "Drink water"})
+def test_create_habit_generates_id(client):
+    response = client.post("/habits", json={"title": "Drink water"})
 
     assert response.status_code == 201
     data = response.json()
@@ -39,49 +39,49 @@ def test_create_task_generates_id(client):
 
 def test_rejects_invalid_status(client):
     response = client.post(
-        "/tasks",
+        "/habits",
         json={"title": "Stretch", "status": "nearly done"},
     )
 
     assert response.status_code == 422
 
 
-def test_get_update_patch_and_delete_task(client):
+def test_get_update_patch_and_delete_habit(client):
     created = client.post(
-        "/tasks",
+        "/habits",
         json={"title": "Read", "status": "pending"},
     ).json()
 
-    task_id = created["id"]
+    habit_id = created["id"]
 
-    get_response = client.get(f"/tasks/{task_id}")
+    get_response = client.get(f"/habits/{habit_id}")
     assert get_response.status_code == 200
     assert get_response.json()["title"] == "Read"
 
     put_response = client.put(
-        f"/tasks/{task_id}",
+        f"/habits/{habit_id}",
         json={"title": "Read a chapter", "status": "completed"},
     )
     assert put_response.status_code == 200
-    assert put_response.json()["id"] == task_id
+    assert put_response.json()["id"] == habit_id
     assert put_response.json()["status"] == "completed"
 
     patch_response = client.patch(
-        f"/tasks/{task_id}",
+        f"/habits/{habit_id}",
         json={"status": "skipped"},
     )
     assert patch_response.status_code == 200
     assert patch_response.json()["title"] == "Read a chapter"
     assert patch_response.json()["status"] == "skipped"
 
-    delete_response = client.delete(f"/tasks/{task_id}")
+    delete_response = client.delete(f"/habits/{habit_id}")
     assert delete_response.status_code == 204
 
-    missing_response = client.get(f"/tasks/{task_id}")
+    missing_response = client.get(f"/habits/{habit_id}")
     assert missing_response.status_code == 404
 
 
-def test_get_missing_task_returns_404(client):
-    response = client.get("/tasks/999")
+def test_get_missing_habit_returns_404(client):
+    response = client.get("/habits/999")
 
     assert response.status_code == 404
